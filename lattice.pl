@@ -12,6 +12,48 @@ find_all_binary_relations(FunctorName,TermList) :-
     Term =.. [FunctorName|[_,_]],
     findall(Term,Term,TermList).
 
+%Finds all unique arguments in a list of binary relations.
+gather_binary_args(TermList,ArgList) :-
+    gather_binary_args(TermList,[],ArgList).
+
+gather_binary_args([],ArgList,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg,Arg]],
+    \+ member(Arg,UniqueArgs),
+    UniqueArgs1 = [Arg|UniqueArgs],
+    gather_binary_args(Terms,UniqueArgs1,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg,Arg]],
+    member(Arg,UniqueArgs),
+    gather_binary_args(Terms,UniqueArgs,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg1,Arg2]],
+    \+ (Arg1 = Arg2),
+    \+ member(Arg1,UniqueArgs),
+    \+ member(Arg2,UniqueArgs),
+    UniqueArgs1 = [Arg1,Arg2|UniqueArgs],
+    gather_binary_args(Terms,UniqueArgs1,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg1,Arg2]],
+    \+ (Arg1 = Arg2),
+    \+ member(Arg1,UniqueArgs),
+    member(Arg2,UniqueArgs),
+    UniqueArgs1 = [Arg1|UniqueArgs],
+    gather_binary_args(Terms,UniqueArgs1,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg1,Arg2]],
+    \+ (Arg1 = Arg2),
+    member(Arg1,UniqueArgs),
+    \+ member(Arg2,UniqueArgs),
+    UniqueArgs1 = [Arg2|UniqueArgs],
+    gather_binary_args(Terms,UniqueArgs1,ArgList).
+gather_binary_args([Term|Terms],UniqueArgs,ArgList) :-
+    Term =.. [_|[Arg1,Arg2]],
+    \+ (Arg1 = Arg2),
+    member(Arg1,UniqueArgs),
+    member(Arg2,UniqueArgs),
+    gather_binary_args(Terms,UniqueArgs,ArgList).
+
 %Order-theoretical property tests
 %Call a property test by specifying a functor name for binary terms in your knowledge base, e.g. "strict_partial_order(covers)"
 
