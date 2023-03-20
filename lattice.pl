@@ -62,8 +62,9 @@ antisymmetric_terms([Term|Terms],TermList) :-
 
 %Transitivity test
 transitive_relation(FunctorName) :-
-    transitive_candidates(FunctorName,TermList,TransitivePairs),
-    all_transitive(TermList,TransitivePairs).
+    find_all_binary_relations(FunctorName,TermList),
+    transitive_candidates(TermList,PossiblyTransitivePairs),
+    all_transitive(TermList,PossiblyTransitivePairs).
 
 possibly_transitive_pair(TermList,Term1,Term2) :-
     member(Term1,TermList),
@@ -80,17 +81,18 @@ transitive_terms(Term1,Term2,Term3) :-
     \+ (Arg1 = Arg2),
     \+ (Arg2 = Arg3).
 
-transitive_candidates(FunctorName,TermList,TransitivePairs) :-
-    find_all_binary_relations(FunctorName,TermList),
-    findall([Term1,Term2],possibly_transitive_pair(TermList,Term1,Term2),TransitivePairs).
+transitive_candidates(TermList,PossiblyTransitivePairs) :-
+    findall([Term1,Term2],possibly_transitive_pair(TermList,Term1,Term2),PossiblyTransitivePairs).
 
 all_transitive(_,[]).
-all_transitive(TermList,[[Term1,Term2]|TransitivePairs]) :-
+all_transitive(TermList,[[Term1,Term2]|PossiblyTransitivePairs]) :-
     member(Term3,TermList),
     transitive_terms(Term1,Term2,Term3),
-    all_transitive(TermList,TransitivePairs).
+    all_transitive(TermList,PossiblyTransitivePairs).
 
 %Strict partial order test
 strict_partial_order(FunctorName) :-
-    irreflexive_relation(FunctorName),
-    transitive_relation(FunctorName).
+    find_all_binary_relations(FunctorName,TermList),
+    irreflexive_terms(TermList,TermList),
+    transitive_candidates(TermList,PossiblyTransitivePairs),
+    all_transitive(TermList,PossiblyTransitivePairs).
