@@ -72,14 +72,16 @@ possibly_transitive_pair(TermList,Term1,Term2) :-
     Term1 =.. [FunctorName|[Arg1,Arg2]],
     Term2 =.. [FunctorName|[Arg2,Arg3]],
     \+ (Arg1 = Arg2),
-    \+ (Arg2 = Arg3).
+    \+ (Arg2 = Arg3),
+    \+ (Arg1 = Arg3).
 
 transitive_terms(Term1,Term2,Term3) :-
     Term1 =.. [FunctorName|[Arg1,Arg2]],
     Term2 =.. [FunctorName|[Arg2,Arg3]],
     Term3 =.. [FunctorName|[Arg1,Arg3]],
     \+ (Arg1 = Arg2),
-    \+ (Arg2 = Arg3).
+    \+ (Arg2 = Arg3),
+    \+ (Arg1 = Arg3).
 
 transitive_candidates(TermList,PossiblyTransitivePairs) :-
     findall([Term1,Term2],possibly_transitive_pair(TermList,Term1,Term2),PossiblyTransitivePairs).
