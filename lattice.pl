@@ -166,33 +166,62 @@ poset(RelationName) :-
 %Lower and Upper Bounds
 
 %This predicate, lower_bound/5, cannot be used as a full mathematical definition on its own see the comment on find_all_lower_bounds/4.
-lower_bound(RelationName,Subset,PosetTerms,PosetArgs,LowerBound) :-
+lower_bound(PosetName,Subset,PosetTerms,PosetArgs,LowerBound) :-
     member(LowerBound,PosetArgs),
-    check_lower_bound(RelationName,PosetTerms,Subset,LowerBound).
+    check_lower_bound(PosetName,PosetTerms,Subset,LowerBound).
 
 check_lower_bound(_,_,[],LowerBound).
-check_lower_bound(RelationName,PosetTerms,[Arg|Args],LowerBound) :-
-    LowerBoundTemplate =.. [RelationName|[LowerBound,Arg]],
+check_lower_bound(PosetName,PosetTerms,[Arg|Args],LowerBound) :-
+    LowerBoundTemplate =.. [PosetName|[LowerBound,Arg]],
     member(LowerBoundTemplate,PosetTerms),
-    check_lower_bound(RelationName,PosetTerms,Args,LowerBound).
+    check_lower_bound(PosetName,PosetTerms,Args,LowerBound).
 
 %Note that I've moved the type-checking and set inclusion logic on the lower bound relationship here, instead of lower_bound/5.
 %This ensures that the type checks (poset,set), the parsing predicates, and the set inclusion checks only run once when finding multiple lower bounds.
-find_all_lower_bounds(RelationName,Subset,PosetTerms,LowerBounds) :-
-    poset(RelationName),
-    find_all_binary_relations(RelationName,PosetTerms),
+find_all_lower_bounds(PosetName,Subset,PosetTerms,LowerBounds) :-
+    poset(PosetName),
+    find_all_binary_relations(PosetName,PosetTerms),
     gather_binary_args(PosetTerms,PosetArgs),
     set(Subset),
     set_inclusion(Subset,PosetArgs),
-    findall(LowerBound,lower_bound(RelationName,Subset,PosetTerms,PosetArgs,LowerBound),LowerBounds).
+    findall(LowerBound,lower_bound(PosetName,Subset,PosetTerms,PosetArgs,LowerBound),LowerBounds).
 
-greatest_lower_bound(RelationName,Subset,GreatestLowerBound) :-
-    find_all_lower_bounds(RelationName,Subset,PosetTerms,LowerBounds),
+greatest_lower_bound(PosetName,Subset,GreatestLowerBound) :-
+    find_all_lower_bounds(PosetName,Subset,PosetTerms,LowerBounds),
     member(GreatestLowerBound,LowerBounds),
-    check_greatest_lower_bound(RelationName,PosetTerms,LowerBounds,GreatestLowerBound).
+    check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound).
 
 check_greatest_lower_bound(_,_,[],GreatestLowerBound).
-check_greatest_lower_bound(RelationName,PosetTerms,[LowerBound|LowerBounds],GreatestLowerBound) :-
-    GreatestLowerBoundTemplate =.. [RelationName|[LowerBound,GreatestLowerBound]],
+check_greatest_lower_bound(PosetName,PosetTerms,[LowerBound|LowerBounds],GreatestLowerBound) :-
+    GreatestLowerBoundTemplate =.. [PosetName|[LowerBound,GreatestLowerBound]],
     member(GreatestLowerBoundTemplate,PosetTerms),
-    check_greatest_lower_bound(RelationName,PosetTerms,LowerBounds,GreatestLowerBound).
+    check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound).
+
+upper_bound(PosetName,Subset,PosetTerms,PosetArgs,UpperBound) :-
+    member(UpperBound,PosetArgs),
+    check_upper_bound(PosetName,PosetTerms,Subset,UpperBound).
+
+check_upper_bound(_,_,[],UpperBound).
+check_upper_bound(PosetName,PosetTerms,[Arg|Args],UpperBound) :-
+    UpperBoundTemplate =.. [PosetName|[Arg,UpperBound]],
+    member(UpperBoundTemplate,PosetTerms),
+    check_upper_bound(PosetName,PosetTerms,Args,UpperBound).
+
+find_all_upper_bounds(PosetName,Subset,PosetTerms,UpperBounds) :-
+    poset(PosetName),
+    find_all_binary_relations(PosetName,PosetTerms),
+    gather_binary_args(PosetTerms,PosetArgs),
+    set(Subset),
+    set_inclusion(Subset,PosetArgs),
+    findall(UpperBound,upper_bound(PosetName,Subset,PosetTerms,PosetArgs,UpperBound),UpperBounds).
+
+least_upper_bound(PosetName,Subset,LeastUpperBound) :-
+    find_all_upper_bounds(PosetName,Subset,PosetTerms,UpperBounds),
+    member(LeastUpperBound,UpperBounds),
+    check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
+
+check_least_upper_bound(_,_,[],LeastUpperBound).
+check_least_upper_bound(PosetName,PosetTerms,[UpperBound|UpperBounds],LeastUpperBound) :-
+    LeastUpperBoundTemplate =.. [PosetName|[LeastUpperBound,UpperBound]],
+    member(LeastUpperBoundTemplate,PosetTerms),
+    check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
