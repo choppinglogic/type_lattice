@@ -1,20 +1,3 @@
-%Sample knowledge base.
-:- dynamic divides/2.
-divides(1,1).
-divides(1,2).
-divides(2,2).
-divides(1,3).
-divides(3,3).
-divides(1,4).
-divides(2,4).
-divides(4,4).
-divides(1,5).
-divides(5,5).
-divides(1,6).
-divides(2,6).
-divides(3,6).
-divides(6,6).
-
 %Utility predicates
 
 %Finds all binary relations with a given functor name in the knowledge base.
@@ -165,7 +148,7 @@ poset(RelationName) :-
 
 %Lower and Upper Bounds
 
-%This predicate, lower_bound/5, cannot be used as a full mathematical definition on its own see the comment on find_all_lower_bounds/4.
+%This predicate, lower_bound/5, cannot be used as a full mathematical definition on its own - see the comment on find_all_lower_bounds/4.
 lower_bound(PosetName,Subset,PosetTerms,PosetArgs,LowerBound) :-
     member(LowerBound,PosetArgs),
     check_lower_bound(PosetName,PosetTerms,Subset,LowerBound).
@@ -176,7 +159,7 @@ check_lower_bound(PosetName,PosetTerms,[Arg|Args],LowerBound) :-
     member(LowerBoundTemplate,PosetTerms),
     check_lower_bound(PosetName,PosetTerms,Args,LowerBound).
 
-%Note that I've moved the type-checking and set inclusion logic on the lower bound relationship here, instead of lower_bound/5.
+%Note the type-checking and set inclusion logic on the lower bound relation here, instead of lower_bound/5.
 %This ensures that the type checks (poset,set), the parsing predicates, and the set inclusion checks only run once when finding multiple lower bounds.
 find_all_lower_bounds(PosetName,Subset,PosetTerms,LowerBounds) :-
     poset(PosetName),
@@ -225,3 +208,27 @@ check_least_upper_bound(PosetName,PosetTerms,[UpperBound|UpperBounds],LeastUpper
     LeastUpperBoundTemplate =.. [PosetName|[LeastUpperBound,UpperBound]],
     member(LeastUpperBoundTemplate,PosetTerms),
     check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
+
+lattice(PosetName) :-
+    poset(PosetName),
+    find_all_binary_relations(PosetName,PosetTerms),
+    gather_binary_args(PosetTerms,PosetArgs),
+    check_lattice(PosetName,PosetArgs,PosetArgs).
+
+check_lattice(_,[],_).
+check_lattice(PosetName,[Arg|Args],PosetArgs) :-
+    check_arg_bounds(PosetName,Arg,PosetArgs),
+    check_lattice(PosetName,Args,PosetArgs).
+
+check_arg_bounds(_,_,[]).
+check_arg_bounds(PosetName,Arg,[Arg|Args]) :-
+    check_arg_bounds(PosetName,Arg,Args).
+check_arg_bounds(PosetName,Arg1,[Arg2|Args]) :-
+    \+ (Arg1 = Arg2),
+    find_all_lower_bounds(PosetName,[Arg1,Arg2],PosetTerms,LowerBounds),
+    member(GreatestLowerBound,LowerBounds),
+    check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound),
+    find_all_upper_bounds(PosetName,[Arg1,Arg2],PosetTerms,UpperBounds),
+    member(LeastUpperBound,UpperBounds),
+    check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound),
+    check_arg_bounds(PosetName,Arg1,Args).
