@@ -64,31 +64,14 @@ set_inclusion([Term|Terms],RelationTerms) :-
 %Reflexivity test
 reflexive_relation(RelationName) :-
     find_all_binary_relations(RelationName,RelationTerms),
-    reflexive_terms(RelationTerms,RelationTerms).
+    gather_binary_args(RelationTerms,RelationArgs),
+    reflexive_args(RelationName,RelationArgs,RelationTerms).
 
-reflexive_terms([],_).
-reflexive_terms([Term|Terms],RelationTerms) :-
-    Term =.. [_|[Arg,Arg]],
-    reflexive_terms(Terms,RelationTerms).
-reflexive_terms([Term|Terms],RelationTerms) :-
-    Term =.. [RelationName|[Arg1,Arg2]],
-    \+ (Arg1 = Arg2),
-    ReflexiveTerm1 =.. [RelationName|[Arg1,Arg1]],
-    ReflexiveTerm2 =.. [RelationName|[Arg2,Arg2]],
-    member(ReflexiveTerm1,RelationTerms),
-    member(ReflexiveTerm2,RelationTerms),
-    reflexive_terms(Terms,RelationTerms).
-
-%Irreflexivity test
-irreflexive_relation(RelationName) :-
-    find_all_binary_relations(RelationName,RelationTerms),
-    irreflexive_terms(RelationTerms,RelationTerms).
-
-irreflexive_terms([],_).
-irreflexive_terms([Term|Terms],RelationTerms) :-
-    Term =.. [_|[Arg1,Arg2]],
-    \+ (Arg1 = Arg2),
-    irreflexive_terms(Terms,RelationTerms).
+reflexive_args(_,[],_).
+reflexive_args(RelationName,[Arg|Args],RelationTerms) :-
+    ReflexiveTerm =.. [RelationName|[Arg,Arg]],
+    member(ReflexiveTerm,RelationTerms),
+    reflexive_args(RelationName,Args,RelationTerms).
 
 %Antisymmetry test
 antisymmetric_relation(RelationName) :-
@@ -141,7 +124,8 @@ all_transitive(RelationTerms,[[Term1,Term2]|PossiblyTransitivePairs]) :-
 %Strict partial order test
 poset(RelationName) :-
     find_all_binary_relations(RelationName,RelationTerms),
-    reflexive_terms(RelationTerms,RelationTerms),
+    gather_binary_args(RelationTerms,RelationArgs),
+    reflexive_args(RelationName,RelationArgs,RelationTerms),
     antisymmetric_terms(RelationTerms,RelationTerms),
     transitive_candidates(RelationTerms,PossiblyTransitivePairs),
     all_transitive(RelationTerms,PossiblyTransitivePairs).
