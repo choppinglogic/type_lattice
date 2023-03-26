@@ -1,11 +1,80 @@
-%Utility predicates
+%Order theoretical tests
+%Tests can be called on the name of a graph edge/dyadic relation, e.g. lattice(datatype).
 
-%Finds all binary relations with a given functor name in the knowledge base.
+%Reflexivity test
+reflexive_relation(RelationName) :-
+    find_all_binary_relations(RelationName,RelationTerms),
+    gather_binary_args(RelationTerms,RelationArgs),
+    reflexive_args(RelationName,RelationArgs,RelationTerms).
+
+%Antisymmetry test
+antisymmetric_relation(RelationName) :-
+    find_all_binary_relations(RelationName,RelationTerms),
+    antisymmetric_terms(RelationTerms,RelationTerms).
+
+%Transitivity test
+transitive_relation(RelationName) :-
+    find_all_binary_relations(RelationName,RelationTerms),
+    transitive_candidates(RelationTerms,PossiblyTransitivePairs),
+    all_transitive(RelationTerms,PossiblyTransitivePairs).
+
+%Poset test
+poset(RelationName) :-
+    find_all_binary_relations(RelationName,RelationTerms),
+    gather_binary_args(RelationTerms,RelationArgs),
+    reflexive_args(RelationName,RelationArgs,RelationTerms),
+    antisymmetric_terms(RelationTerms,RelationTerms),
+    transitive_candidates(RelationTerms,PossiblyTransitivePairs),
+    all_transitive(RelationTerms,PossiblyTransitivePairs).
+
+%Lattice test
+lattice(PosetName) :-
+    poset(PosetName),
+    find_all_binary_relations(PosetName,PosetTerms),
+    gather_binary_args(PosetTerms,PosetArgs),
+    check_lattice(PosetName,PosetTerms,PosetArgs,PosetArgs).
+
+%Order theoretical operators
+%Operators can be called on the name of a poset and a subset of the poset, e.g. greatest_lower_bound(datatype,[float64,const],GreatestLowerBound).
+
+%Greatest lower bound/infimum/maximal commmon subtype/meet operator
+greatest_lower_bound(PosetName,Subset,GreatestLowerBound) :-
+    poset(PosetName),
+    set(Subset),
+    find_all_binary_relations(PosetName,PosetTerms),
+    gather_binary_args(PosetTerms,PosetArgs),
+    set_inclusion(Subset,PosetArgs),
+    find_all_lower_bounds(PosetName,Subset,PosetTerms,PosetArgs,LowerBounds),
+    member(GreatestLowerBound,LowerBounds),
+    check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound).
+
+%Least upper bound/supremum/minimal common supertype/join operator
+least_upper_bound(PosetName,Subset,LeastUpperBound) :-
+    poset(PosetName),
+    set(Subset),
+    find_all_binary_relations(PosetName,PosetTerms),
+    gather_binary_args(PosetTerms,PosetArgs),
+    set_inclusion(Subset,PosetArgs),
+    find_all_upper_bounds(PosetName,Subset,PosetTerms,PosetArgs,UpperBounds),
+    member(LeastUpperBound,UpperBounds),
+    check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
+
+%Auxiliary predicates
+
+set([]).
+set([Elem|Elems]) :-
+    \+ member(Elem,Elems),
+    set(Elems).
+
+set_inclusion([],_).
+set_inclusion([Term|Terms],RelationTerms) :-
+    member(Term,RelationTerms),
+    set_inclusion(Terms,RelationTerms).
+
 find_all_binary_relations(RelationName,RelationTerms) :-
     Term =.. [RelationName|[_,_]],
     findall(Term,Term,RelationTerms).
 
-%Finds all unique arguments in a list of binary relations.
 gather_binary_args(RelationTerms,RelationArgs) :-
     gather_binary_args(RelationTerms,[],RelationArgs).
 
@@ -47,36 +116,11 @@ gather_binary_args([Term|Terms],UniqueArgs,RelationArgs) :-
     member(Arg2,UniqueArgs),
     gather_binary_args(Terms,UniqueArgs,RelationArgs).
 
-%Set theoretical tests
-set([]).
-set([Elem|Elems]) :-
-    \+ member(Elem,Elems),
-    set(Elems).
-
-set_inclusion([],_).
-set_inclusion([Term|Terms],RelationTerms) :-
-    member(Term,RelationTerms),
-    set_inclusion(Terms,RelationTerms).
-
-%Order theoretical property tests
-%Call a property test by specifying a functor name for binary terms in your knowledge base, e.g. "strict_partial_order(covers)"
-
-%Reflexivity test
-reflexive_relation(RelationName) :-
-    find_all_binary_relations(RelationName,RelationTerms),
-    gather_binary_args(RelationTerms,RelationArgs),
-    reflexive_args(RelationName,RelationArgs,RelationTerms).
-
 reflexive_args(_,[],_).
 reflexive_args(RelationName,[Arg|Args],RelationTerms) :-
     ReflexiveTerm =.. [RelationName|[Arg,Arg]],
     member(ReflexiveTerm,RelationTerms),
     reflexive_args(RelationName,Args,RelationTerms).
-
-%Antisymmetry test
-antisymmetric_relation(RelationName) :-
-    find_all_binary_relations(RelationName,RelationTerms),
-    antisymmetric_terms(RelationTerms,RelationTerms).
 
 antisymmetric_terms([],_).
 antisymmetric_terms([Term|Terms],RelationTerms) :-
@@ -88,12 +132,6 @@ antisymmetric_terms([Term|Terms],RelationTerms) :-
     SymmetricTerm =.. [RelationName|[Arg2,Arg1]],
     \+ member(SymmetricTerm,RelationTerms),
     antisymmetric_terms(Terms,RelationTerms).
-
-%Transitivity test
-transitive_relation(RelationName) :-
-    find_all_binary_relations(RelationName,RelationTerms),
-    transitive_candidates(RelationTerms,PossiblyTransitivePairs),
-    all_transitive(RelationTerms,PossiblyTransitivePairs).
 
 possibly_transitive_pair(RelationTerms,Term1,Term2) :-
     member(Term1,RelationTerms),
@@ -121,18 +159,6 @@ all_transitive(RelationTerms,[[Term1,Term2]|PossiblyTransitivePairs]) :-
     transitive_terms(Term1,Term2,Term3),
     all_transitive(RelationTerms,PossiblyTransitivePairs).
 
-%Strict partial order test
-poset(RelationName) :-
-    find_all_binary_relations(RelationName,RelationTerms),
-    gather_binary_args(RelationTerms,RelationArgs),
-    reflexive_args(RelationName,RelationArgs,RelationTerms),
-    antisymmetric_terms(RelationTerms,RelationTerms),
-    transitive_candidates(RelationTerms,PossiblyTransitivePairs),
-    all_transitive(RelationTerms,PossiblyTransitivePairs).
-
-%Lower and Upper Bounds
-
-%This predicate, lower_bound/5, cannot be used as a full mathematical definition on its own - see the comment on find_all_lower_bounds/4.
 lower_bound(PosetName,Subset,PosetTerms,PosetArgs,LowerBound) :-
     member(LowerBound,PosetArgs),
     check_lower_bound(PosetName,PosetTerms,Subset,LowerBound).
@@ -143,20 +169,8 @@ check_lower_bound(PosetName,PosetTerms,[Arg|Args],LowerBound) :-
     member(LowerBoundTemplate,PosetTerms),
     check_lower_bound(PosetName,PosetTerms,Args,LowerBound).
 
-%Note the type-checking and set inclusion logic on the lower bound relation here, instead of lower_bound/5.
-%This ensures that the type checks (poset,set), the parsing predicates, and the set inclusion checks only run once when finding multiple lower bounds.
-find_all_lower_bounds(PosetName,Subset,PosetTerms,LowerBounds) :-
-    poset(PosetName),
-    find_all_binary_relations(PosetName,PosetTerms),
-    gather_binary_args(PosetTerms,PosetArgs),
-    set(Subset),
-    set_inclusion(Subset,PosetArgs),
+find_all_lower_bounds(PosetName,Subset,PosetTerms,PosetArgs,LowerBounds) :-
     findall(LowerBound,lower_bound(PosetName,Subset,PosetTerms,PosetArgs,LowerBound),LowerBounds).
-
-greatest_lower_bound(PosetName,Subset,GreatestLowerBound) :-
-    find_all_lower_bounds(PosetName,Subset,PosetTerms,LowerBounds),
-    member(GreatestLowerBound,LowerBounds),
-    check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound).
 
 check_greatest_lower_bound(_,_,[],GreatestLowerBound).
 check_greatest_lower_bound(PosetName,PosetTerms,[LowerBound|LowerBounds],GreatestLowerBound) :-
@@ -174,18 +188,8 @@ check_upper_bound(PosetName,PosetTerms,[Arg|Args],UpperBound) :-
     member(UpperBoundTemplate,PosetTerms),
     check_upper_bound(PosetName,PosetTerms,Args,UpperBound).
 
-find_all_upper_bounds(PosetName,Subset,PosetTerms,UpperBounds) :-
-    poset(PosetName),
-    find_all_binary_relations(PosetName,PosetTerms),
-    gather_binary_args(PosetTerms,PosetArgs),
-    set(Subset),
-    set_inclusion(Subset,PosetArgs),
+find_all_upper_bounds(PosetName,Subset,PosetTerms,PosetArgs,UpperBounds) :-
     findall(UpperBound,upper_bound(PosetName,Subset,PosetTerms,PosetArgs,UpperBound),UpperBounds).
-
-least_upper_bound(PosetName,Subset,LeastUpperBound) :-
-    find_all_upper_bounds(PosetName,Subset,PosetTerms,UpperBounds),
-    member(LeastUpperBound,UpperBounds),
-    check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
 
 check_least_upper_bound(_,_,[],LeastUpperBound).
 check_least_upper_bound(PosetName,PosetTerms,[UpperBound|UpperBounds],LeastUpperBound) :-
@@ -193,26 +197,20 @@ check_least_upper_bound(PosetName,PosetTerms,[UpperBound|UpperBounds],LeastUpper
     member(LeastUpperBoundTemplate,PosetTerms),
     check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound).
 
-lattice(PosetName) :-
-    poset(PosetName),
-    find_all_binary_relations(PosetName,PosetTerms),
-    gather_binary_args(PosetTerms,PosetArgs),
-    check_lattice(PosetName,PosetArgs,PosetArgs).
+check_lattice(_,_,[],_).
+check_lattice(PosetName,PosetTerms,[Arg|Args],PosetArgs) :-
+    check_arg_bounds(PosetName,PosetTerms,Arg,PosetArgs,PosetArgs),
+    check_lattice(PosetName,PosetTerms,Args,PosetArgs).
 
-check_lattice(_,[],_).
-check_lattice(PosetName,[Arg|Args],PosetArgs) :-
-    check_arg_bounds(PosetName,Arg,PosetArgs),
-    check_lattice(PosetName,Args,PosetArgs).
-
-check_arg_bounds(_,_,[]).
-check_arg_bounds(PosetName,Arg,[Arg|Args]) :-
-    check_arg_bounds(PosetName,Arg,Args).
-check_arg_bounds(PosetName,Arg1,[Arg2|Args]) :-
+check_arg_bounds(_,_,_,[],_).
+check_arg_bounds(PosetName,PosetTerms,Arg,[Arg|Args],PosetArgs) :-
+    check_arg_bounds(PosetName,PosetTerms,Arg,Args,PosetArgs).
+check_arg_bounds(PosetName,PosetTerms,Arg1,[Arg2|Args],PosetArgs) :-
     \+ (Arg1 = Arg2),
-    find_all_lower_bounds(PosetName,[Arg1,Arg2],PosetTerms,LowerBounds),
+    find_all_lower_bounds(PosetName,[Arg1,Arg2],PosetTerms,PosetArgs,LowerBounds),
     member(GreatestLowerBound,LowerBounds),
     check_greatest_lower_bound(PosetName,PosetTerms,LowerBounds,GreatestLowerBound),
-    find_all_upper_bounds(PosetName,[Arg1,Arg2],PosetTerms,UpperBounds),
+    find_all_upper_bounds(PosetName,[Arg1,Arg2],PosetTerms,PosetArgs,UpperBounds),
     member(LeastUpperBound,UpperBounds),
     check_least_upper_bound(PosetName,PosetTerms,UpperBounds,LeastUpperBound),
-    check_arg_bounds(PosetName,Arg1,Args).
+    check_arg_bounds(PosetName,PosetTerms,Arg1,Args,PosetArgs).
